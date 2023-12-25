@@ -146,27 +146,24 @@ bool q_delete_mid(struct list_head *head)
 }
 
 /* Delete all nodes that have duplicate string */
+
 bool q_delete_dup(struct list_head *head)
 {
-    if (!head || list_empty(head))
+    if (!head)
         return false;
 
-    struct list_head **indir = &head;
-    struct list_head *cmp = head;
-
-    while (cmp != head) {
-        while (cmp->next &&
-               strcmp((list_entry(cmp->next, element_t, list))->value,
-                      (list_entry((*indir)->next, element_t, list))->value) ==
-                   0) {
-            cmp = cmp->next;
+    bool del = false;
+    element_t *cur, *safe;
+    list_for_each_entry_safe (cur, safe, head, list) {
+        if (safe->list != head && !strcmp(safe->value, cur->value)) {
+            list_del_init(&cur->list);
+            q_release_element(cur);
+            del = true;
+        } else if (del) {
+            list_del_init(&cur->list);
+            q_release_element(cur);
+            del = false;
         }
-        if (*indir == cmp)
-            indir = &(*indir)->next;
-        else
-            *indir = cmp;
-
-        cmp = cmp->next;
     }
     return true;
 }
