@@ -92,7 +92,7 @@ element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
         return NULL;
 
     element_t *ele = list_first_entry(head, element_t, list);
-    list_del_init(ele);
+    list_del_init(&ele->list);
 
     strncpy(sp, ele->value, bufsize - 1);
     sp[bufsize - 1] = '\0';
@@ -106,7 +106,7 @@ element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
         return NULL;
 
     element_t *ele = list_last_entry(head, element_t, list);
-    list_del_init(ele);
+    list_del_init(&ele->list);
 
     strncpy(sp, ele->value, bufsize - 1);
     sp[bufsize - 1] = '\0';
@@ -134,17 +134,14 @@ bool q_delete_mid(struct list_head *head)
     if (!head || list_empty(head))
         return false;
 
-    struct list_head *mid = head->next;
-    struct list_head *tmp = head->next;
+    struct list_head *slow, *fast;
+    slow = fast = head->next;
+    for (; fast != head && fast->next != head; fast = fast->next->next)
+        slow = slow->next;
 
-    while (tmp != head || tmp->next != head) {
-        tmp = tmp->next->next;
-        mid = mid->next;
-    }
-
-    list_del(mid);
-    element_t *del_ele = list_entry(mid, element_t, list);
-    q_release_element(del_ele);
+    element_t *ele = list_entry(slow, element_t, list);
+    list_del(&ele->list);
+    q_release_element(ele);
     return true;
 }
 
@@ -208,16 +205,16 @@ int q_ascend(struct list_head *head)
     return 0;
 }
 
-/* Remove every node which has a node with a strictly greater value anywhere to
- * the right side of it */
+/* Remove every node which has a node with a strictly greater value anywhere
+ * to the right side of it */
 int q_descend(struct list_head *head)
 {
     // https://leetcode.com/problems/remove-nodes-from-linked-list/
     return 0;
 }
 
-/* Merge all the queues into one sorted queue, which is in ascending/descending
- * order */
+/* Merge all the queues into one sorted queue, which is in
+ * ascending/descending order */
 int q_merge(struct list_head *head, bool descend)
 {
     // https://leetcode.com/problems/merge-k-sorted-lists/
