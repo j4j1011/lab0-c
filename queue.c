@@ -121,10 +121,8 @@ int q_size(struct list_head *head)
 
     struct list_head *node;
     int i = 0;
-
     list_for_each (node, head)
         i++;
-
     return i;
 }
 
@@ -138,7 +136,6 @@ bool q_delete_mid(struct list_head *head)
     slow = fast = head->next;
     for (; fast != head && fast->next != head; fast = fast->next->next)
         slow = slow->next;
-
     element_t *ele = list_entry(slow, element_t, list);
     list_del(&ele->list);
     q_release_element(ele);
@@ -171,24 +168,49 @@ bool q_delete_dup(struct list_head *head)
 /* Swap every two adjacent nodes */
 void q_swap(struct list_head *head)
 {
-    struct list_head **indir = &head;
+    if (!head || list_empty(head) || list_is_singular(head))
+        return;
 
-    do {
-        struct list_head *tmp = *indir;
-        *indir = (*indir)->next;
-        tmp->next = (*indir)->next;
-        (*indir)->next = tmp;
-        indir = &(*indir)->next->next;
-    } while (*indir != head);
+    struct list_head *node = head->next, *next = node->next;
+    for (; next != head && node != head;) {
+        list_move(node, next);
+        node = node->next;
+        next = node->next;
+    }
+    return;
 }
 
 /* Reverse elements in queue */
-void q_reverse(struct list_head *head) {}
+void q_reverse(struct list_head *head)
+{
+    if (!head || list_empty(head) || list_is_singular(head))
+        return;
+
+    struct list_head *node, *safe;
+    list_for_each_safe (node, safe, head)
+        list_move(node, head);
+    return;
+}
 
 /* Reverse the nodes of the list k at a time */
 void q_reverseK(struct list_head *head, int k)
 {
-    // https://leetcode.com/problems/reverse-nodes-in-k-group/
+    if (!head || list_empty(head) || list_is_singular(head) || k <= 1)
+        return;
+
+    struct list_head *node, *safe, *tmp_h = head;
+    int length = q_size(head) / k;
+    for (int i = 0; i < length; i++) {
+        node = tmp_h->next;
+        safe = node->next;
+        for (int j = 0; j < k - 1; j++) {
+            list_move(node, tmp_h);
+            node = safe;
+            safe = node->next;
+        }
+        tmp_h = node->prev;
+    }
+    return;
 }
 
 /* Sort elements of queue in ascending/descending order */
