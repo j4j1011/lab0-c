@@ -230,7 +230,7 @@ int q_ascend(struct list_head *head)
     for (; &prev->list != head;) {
         if (strcmp(prev->value, node->value) >= 0) {
             list_del(&prev->list);
-            q_release(prev);
+            q_release_element(prev);
             prev = list_entry(node->list.prev, element_t, list);
         } else {
             ret++;
@@ -255,7 +255,7 @@ int q_descend(struct list_head *head)
     for (; &prev->list != head;) {
         if (strcmp(prev->value, node->value) <= 0) {
             list_del(&prev->list);
-            q_release(prev);
+            q_release_element(prev);
             prev = list_entry(node->list.prev, element_t, list);
         } else {
             ret++;
