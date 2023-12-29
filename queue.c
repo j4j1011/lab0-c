@@ -10,11 +10,84 @@
  *   cppcheck-suppress nullPointer
  */
 
+/* Compare two string */
+int cmp(char *a, char *b, bool descend)
+{
+    if (descend)
+        return (strcmp(a, b));
+    else
+        return (strcmp(b, a));
+}
+
+/* Merge two link list and return new head */
+struct list_head *merge(struct list_head *a, struct head_list *b, bool descend)
+{
+    struct list_head *head = NULL, **tail = &head;
+    element_t *ele_a, *ele_b;
+    ele_a = list_entry(a, element_t, list);
+    ele_b = list_entry(b, element_t, list);
+    while (1) {
+        if (cmp(ele_a->value, ele_b->value, descend) <= 0) {
+            *tail = a;
+            tail = &a->next;
+            a = a->next;
+            if (!a) {
+                *tail = b;
+                break;
+            }
+        } else {
+            *tail = b;
+            tail = &b->next;
+            b = b->next;
+            if (!b) {
+                *tail = a;
+                break;
+            }
+        }
+    }
+    return head;
+}
+
+/* Merge final two link list and insert to old head*/
+void merge_final(struct list_head *a,
+                 struct list_head *b,
+                 struct list_head *head,
+                 bool descend)
+{
+    struct list_head *tail = head;
+    if (cmp(a, b, descend) <= 0) {
+        tail->next = a;
+        a->prev = tail;
+        tail = a;
+        a = a->next;
+        if (!a) {
+            break;
+        }
+    } else {
+        tail->next = b;
+        b->prev = tail;
+        tail = b;
+        b = b->next;
+        if (!b) {
+            b = a;
+            break;
+        }
+    }
+    tail->next = b;
+    while (b != null) {
+        b->prev = tail;
+        tail = b;
+        b = b->next;
+    }
+    tail->next = head;
+    head->prev = tail;
+    return;
+}
+
 /* Create an empty queue */
 struct list_head *q_new()
 {
     struct list_head *head = test_malloc(sizeof(struct list_head));
-
     if (!head)
         return NULL;
 
@@ -27,11 +100,11 @@ void q_free(struct list_head *l)
 {
     if (!l)
         return;
+
     element_t *entry, *safe;
     list_for_each_entry_safe (entry, safe, l, list) {
         q_release_element(entry);
     }
-
     test_free(l);
     return;
 }
@@ -53,11 +126,9 @@ bool q_insert_head(struct list_head *head, char *s)
         test_free(node);
         return false;
     }
-
     strncpy(val, s, strlen(s) + 1);
     node->value = val;
     list_add(&node->list, head);
-
     return true;
 }
 
@@ -68,20 +139,16 @@ bool q_insert_tail(struct list_head *head, char *s)
         return false;
 
     element_t *node = malloc(sizeof(element_t));
-
     if (!node)
         return false;
 
     node->value = malloc(sizeof(char) * (strlen(s) + 1));
-
     if (!node->value) {
         test_free(node);
         return false;
     }
-
     strncpy(node->value, s, strlen(s) + 1);
     list_add_tail(&node->list, head);
-
     return true;
 }
 
@@ -93,7 +160,6 @@ element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
 
     element_t *ele = list_first_entry(head, element_t, list);
     list_del_init(&ele->list);
-
     strncpy(sp, ele->value, bufsize - 1);
     sp[bufsize - 1] = '\0';
     return ele;
@@ -107,7 +173,6 @@ element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
 
     element_t *ele = list_last_entry(head, element_t, list);
     list_del_init(&ele->list);
-
     strncpy(sp, ele->value, bufsize - 1);
     sp[bufsize - 1] = '\0';
     return ele;
@@ -216,8 +281,41 @@ void q_reverseK(struct list_head *head, int k)
 /* Sort elements of queue in ascending/descending order */
 void q_sort(struct list_head *head, bool descend)
 {
+    if (!head || list_empty(head) || list_is_singular(head))
+        return;
+
+    size_t count = 0;
+    head->prev->next = NULL;
+    struct list_head *pending = NULL, *list = head->next;
+    do {
+        size_t bits, struct list_head **tail = &pending;
+        for (bits = count; bits & 1; bits = bits >> 1)
+            tail = &(*tail)->prev;
+        if (bits > 0) {
+            struct list_head *a = *tail, *b = *a->prev;
+            a = merge(a, b, descend);
+            a->prev = b->prev;
+            *tail = a;
+        }
+        list->prev = pending;
+        pending = list;
+        list = list->next;
+        pending->next = NULL;
+        count++;
+    } while (!list);
+    list = pending;
+    pending = pending->prev;
+    while (1) {
+        struct list_head *next = pending->prev;
+        if (!next)
+            break;
+        list = merge(list, pending);
+        pending = next;
+    }
+    merge_final(list, pending, head, descend);
     return;
 }
+
 /* Remove every node which has a node with a strictly less value anywhere to
  * the right side of it */
 int q_ascend(struct list_head *head)
@@ -240,7 +338,6 @@ int q_ascend(struct list_head *head)
             prev = list_entry(prev->list.prev, element_t, list);
         }
     }
-    return ret;
 }
 
 /* Remove every node which has a node with a strictly greater value anywhere
@@ -272,5 +369,33 @@ int q_descend(struct list_head *head)
  * ascending/descending order */
 int q_merge(struct list_head *head, bool descend)
 {
-    return 6;
+    int count = 0;
+    head->prev->next = NULL;
+    struct list_head *pending = head, *list = pending->next;
+    do {
+        size_t bits, struct list_head **tail = &pending;
+        for (bits = count; bits & 1; bits = bits >> 1)
+            tail = &(*tail)->prev;
+        if (bits > 0) {
+            struct list_head *a = *tail, *b = *a->prev;
+            a = merge(a, b);
+            a->prev = b->prev;
+            *tail = a;
+        }
+        list->prev = pending;
+        pending = list;
+        list = list->next;
+        count++;
+    } while (!list);
+    list = pending;
+    pending = pending->prev;
+    while (1) {
+        struct list_head *next = pending->prev;
+        if (!next)
+            break;
+        list = merge(list, pending);
+        pending = next;
+    }
+    mergr_final(list, pending, head);
+    return list_entry(head->next, queue_contex_t, chain)->size;
 }
