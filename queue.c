@@ -20,7 +20,7 @@ int cmp(char *a, char *b, bool descend)
 }
 
 /* Merge two link list and return new head */
-struct list_head *merge(struct list_head *a, struct head_list *b, bool descend)
+struct list_head *merge(struct list_head *a, struct list_head *b, bool descend)
 {
     struct list_head *head = NULL, **tail = &head;
     element_t *ele_a, *ele_b;
@@ -55,26 +55,31 @@ void merge_final(struct list_head *a,
                  bool descend)
 {
     struct list_head *tail = head;
-    if (cmp(a, b, descend) <= 0) {
-        tail->next = a;
-        a->prev = tail;
-        tail = a;
-        a = a->next;
-        if (!a) {
-            break;
-        }
-    } else {
-        tail->next = b;
-        b->prev = tail;
-        tail = b;
-        b = b->next;
-        if (!b) {
-            b = a;
-            break;
+    element_t *ele_a, *ele_b;
+    ele_a = list_entry(a, element_t, list);
+    ele_b = list_entry(b, element_t, list);
+    while (1) {
+        if (cmp(ele_a->value, ele_b->value, descend) <= 0) {
+            tail->next = a;
+            a->prev = tail;
+            tail = a;
+            a = a->next;
+            if (!a) {
+                break;
+            }
+        } else {
+            tail->next = b;
+            b->prev = tail;
+            tail = b;
+            b = b->next;
+            if (!b) {
+                b = a;
+                break;
+            }
         }
     }
     tail->next = b;
-    while (b != null) {
+    while (b != NULL) {
         b->prev = tail;
         tail = b;
         b = b->next;
@@ -288,11 +293,12 @@ void q_sort(struct list_head *head, bool descend)
     head->prev->next = NULL;
     struct list_head *pending = NULL, *list = head->next;
     do {
-        size_t bits, struct list_head **tail = &pending;
+        size_t bits;
+        struct list_head **tail = &pending;
         for (bits = count; bits & 1; bits = bits >> 1)
             tail = &(*tail)->prev;
         if (bits > 0) {
-            struct list_head *a = *tail, *b = *a->prev;
+            struct list_head *a = *tail, *b = a->prev;
             a = merge(a, b, descend);
             a->prev = b->prev;
             *tail = a;
@@ -309,7 +315,7 @@ void q_sort(struct list_head *head, bool descend)
         struct list_head *next = pending->prev;
         if (!next)
             break;
-        list = merge(list, pending);
+        list = merge(list, pending, descend);
         pending = next;
     }
     merge_final(list, pending, head, descend);
@@ -338,6 +344,7 @@ int q_ascend(struct list_head *head)
             prev = list_entry(prev->list.prev, element_t, list);
         }
     }
+    return ret;
 }
 
 /* Remove every node which has a node with a strictly greater value anywhere
@@ -369,33 +376,5 @@ int q_descend(struct list_head *head)
  * ascending/descending order */
 int q_merge(struct list_head *head, bool descend)
 {
-    int count = 0;
-    head->prev->next = NULL;
-    struct list_head *pending = head, *list = pending->next;
-    do {
-        size_t bits, struct list_head **tail = &pending;
-        for (bits = count; bits & 1; bits = bits >> 1)
-            tail = &(*tail)->prev;
-        if (bits > 0) {
-            struct list_head *a = *tail, *b = *a->prev;
-            a = merge(a, b);
-            a->prev = b->prev;
-            *tail = a;
-        }
-        list->prev = pending;
-        pending = list;
-        list = list->next;
-        count++;
-    } while (!list);
-    list = pending;
-    pending = pending->prev;
-    while (1) {
-        struct list_head *next = pending->prev;
-        if (!next)
-            break;
-        list = merge(list, pending);
-        pending = next;
-    }
-    mergr_final(list, pending, head);
-    return list_entry(head->next, queue_contex_t, chain)->size;
+    return 0;
 }
