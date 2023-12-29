@@ -376,5 +376,22 @@ int q_descend(struct list_head *head)
  * ascending/descending order */
 int q_merge(struct list_head *head, bool descend)
 {
-    return 0;
+    if (!head || list_empty(head))
+        return 0;
+
+    if (list_is_singular(head))
+        return list_entry(head->next, queue_contex_t, chain)->size;
+    int ret = 0;
+    struct list_head *node;
+    struct list_head *tmp_head = q_new();
+    list_for_each (node, head) {
+        queue_contex_t *entry = list_entry(node, queue_contex_t, chain);
+        ret += entry->size;
+        list_splice(entry->q, tmp_head);
+        entry->q = NULL;
+    }
+    q_sort(tmp_head, descend);
+    list_entry(head->next, queue_contex_t, chain)->q = tmp_head;
+    list_entry(head->next, queue_contex_t, chain)->size = ret;
+    return ret;
 }
