@@ -395,13 +395,10 @@ int q_merge(struct list_head *head, bool descend)
         queue_contex_t *entry = list_entry(node, queue_contex_t, chain);
         ret += entry->size;
         entry->size = 0;
-        list_splice(entry->q, tmp_head);
-        entry->q->next = NULL;
-        entry->q->prev = NULL;
+        list_splice_init(entry->q, tmp_head);
     }
 
     q_sort(tmp_head, descend);
-    list_entry(head->next, queue_contex_t, chain)->q = tmp_head;
     list_entry(head->next, queue_contex_t, chain)->size = ret;
     return ret;
 }
