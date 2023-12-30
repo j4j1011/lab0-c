@@ -23,24 +23,24 @@ int cmp(char *a, char *b, bool descend)
 struct list_head *merge(struct list_head *a, struct list_head *b, bool descend)
 {
     struct list_head *head = NULL, **tail = &head;
-    element_t *ele_a, *ele_b;
-    ele_a = list_entry(a, element_t, list);
-    ele_b = list_entry(b, element_t, list);
     while (1) {
-        if (cmp(ele_a->value, ele_b->value, descend) <= 0) {
-            *tail = a;
-            tail = &a->next;
-            a = a->next;
-            if (!a) {
-                *tail = b;
-                break;
-            }
-        } else {
+        element_t *ele_a, *ele_b;
+        ele_a = list_entry(a, element_t, list);
+        ele_b = list_entry(b, element_t, list);
+        if (cmp(ele_b->value, ele_a->value, descend) <= 0) {
             *tail = b;
             tail = &b->next;
             b = b->next;
             if (!b) {
                 *tail = a;
+                break;
+            }
+        } else {
+            *tail = a;
+            tail = &a->next;
+            a = a->next;
+            if (!a) {
+                *tail = b;
                 break;
             }
         }
@@ -55,34 +55,35 @@ void merge_final(struct list_head *a,
                  bool descend)
 {
     struct list_head *tail = head;
-    element_t *ele_a, *ele_b;
-    ele_a = list_entry(a, element_t, list);
-    ele_b = list_entry(b, element_t, list);
     while (1) {
-        if (cmp(ele_a->value, ele_b->value, descend) <= 0) {
-            tail->next = a;
-            a->prev = tail;
-            tail = a;
-            a = a->next;
-            if (!a) {
-                break;
-            }
-        } else {
+        element_t *ele_a, *ele_b;
+        ele_a = list_entry(a, element_t, list);
+        ele_b = list_entry(b, element_t, list);
+        if (cmp(ele_b->value, ele_a->value, descend) <= 0) {
             tail->next = b;
             b->prev = tail;
             tail = b;
             b = b->next;
             if (!b) {
-                b = a;
+                break;
+            }
+        } else {
+            tail->next = a;
+            a->prev = tail;
+            tail = a;
+            a = a->next;
+
+            if (!a) {
+                a = b;
                 break;
             }
         }
     }
-    tail->next = b;
-    while (b != NULL) {
-        b->prev = tail;
-        tail = b;
-        b = b->next;
+    tail->next = a;
+    while (a != NULL) {
+        a->prev = tail;
+        tail = a;
+        a = a->next;
     }
     tail->next = head;
     head->prev = tail;
@@ -120,19 +121,16 @@ bool q_insert_head(struct list_head *head, char *s)
     if (!head || !s)
         return false;
 
-    element_t *node = test_malloc(sizeof(element_t));
-
+    element_t *node = malloc(sizeof(element_t));
     if (!node)
         return false;
 
-    char *val = test_malloc((strlen(s) + 1) * sizeof(char));
-
-    if (!val) {
-        test_free(node);
+    node->value = malloc((strlen(s) + 1) * sizeof(char));
+    if (!node->value) {
+        free(node);
         return false;
     }
-    strncpy(val, s, strlen(s) + 1);
-    node->value = val;
+    memcpy(node->value, s, strlen(s) + 1);
     list_add(&node->list, head);
     return true;
 }
@@ -147,12 +145,12 @@ bool q_insert_tail(struct list_head *head, char *s)
     if (!node)
         return false;
 
-    node->value = malloc(sizeof(char) * (strlen(s) + 1));
+    node->value = malloc((strlen(s) + 1) * sizeof(char));
     if (!node->value) {
-        test_free(node);
+        free(node);
         return false;
     }
-    strncpy(node->value, s, strlen(s) + 1);
+    memcpy(node->value, s, strlen(s) + 1);
     list_add_tail(&node->list, head);
     return true;
 }
@@ -160,26 +158,32 @@ bool q_insert_tail(struct list_head *head, char *s)
 /* Remove an element from head of queue */
 element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
 {
-    if (list_empty(head))
+    if (!head || list_empty(head))
         return NULL;
 
     element_t *ele = list_first_entry(head, element_t, list);
-    list_del_init(&ele->list);
-    strncpy(sp, ele->value, bufsize - 1);
-    sp[bufsize - 1] = '\0';
+    if (sp && bufsize) {
+        if (sp[bufsize - 1] != '\0')
+            bufsize++;
+        memcpy(ele->value, sp, bufsize);
+    }
+    list_del_init(head->next);
     return ele;
 }
 
 /* Remove an element from tail of queue */
 element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
 {
-    if (list_empty(head))
+    if (!head || list_empty(head))
         return NULL;
 
     element_t *ele = list_last_entry(head, element_t, list);
-    list_del_init(&ele->list);
-    strncpy(sp, ele->value, bufsize - 1);
-    sp[bufsize - 1] = '\0';
+    if (sp && bufsize) {
+        if (sp[bufsize - 1] != '\0')
+            bufsize++;
+        memcpy(ele->value, sp, bufsize);
+    }
+    list_del_init(head->next);
     return ele;
 }
 
