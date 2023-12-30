@@ -14,9 +14,9 @@
 int cmp(char *a, char *b, bool descend)
 {
     if (descend)
-        return (strcmp(a, b));
-    else
         return (strcmp(b, a));
+    else
+        return (strcmp(a, b));
 }
 
 /* Merge two link list and return new head */
