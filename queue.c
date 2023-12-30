@@ -370,64 +370,29 @@ int q_descend(struct list_head *head)
 
 /* Merge all the queues into one sorted queue, which is in
  * ascending/descending order */
-static bool compare(struct list_head *left, struct list_head *right)
-{
-    /* return 1 -> left>right
-     *        0 -> left<=right
-     */
-    return strcmp(list_entry(left->next, element_t, list)->value,
-                  list_entry(right->next, element_t, list)->value) > 0;
-}
-
-static void q_merge_two(struct list_head *head,
-                        struct list_head *left,
-                        struct list_head *right,
-                        bool descend)
-{
-    /* descend = 0 for ascending
-     *           1 for descending
-     */
-    while (!list_empty(left) && !list_empty(right)) {
-        if ((compare(left, right) & descend) ||
-            (compare(right, left) & (!descend))) {
-            list_move_tail(left->next, head);
-        } else {
-            list_move_tail(right->next, head);
-        }
-    }
-    if (!list_empty(left)) {
-        list_splice_tail_init(left, head);
-    } else {
-        list_splice_tail_init(right, head);
-    }
-}
-/* Merge all the queues into one sorted queue, which is in ascending/descending
- * order */
 int q_merge(struct list_head *head, bool descend)
 {
-    // https://leetcode.com/problems/merge-k-sorted-lists/
     if (!head || list_empty(head))
         return 0;
-    if (list_is_singular(head))
-        return list_entry(head, queue_contex_t, chain)->size;
 
-    int size = q_size(head);
-    struct list_head *forward, *backward = head->prev;
-    while (size > 1) {
-        forward = head->next;
-        for (int i = 0; i < size / 2; ++i) {
-            LIST_HEAD(tmp);
-            q_merge_two(&tmp, list_entry(forward, queue_contex_t, chain)->q,
-                        list_entry(backward, queue_contex_t, chain)->q,
-                        descend);
-            list_splice_tail(&tmp,
-                             list_entry(forward, queue_contex_t, chain)->q);
-            forward = forward->next;
-            backward = backward->prev;
-        }
-
-        size = (size + 1) / 2;
+    if (list_is_singular(head)) {
+        return list_entry(head->next, queue_contex_t, chain)->size;
+    }
+    struct list_head *node;
+    struct list_head *tmp_head =
+        list_entry(head->next, queue_contex_t, chain)->q;
+    int ret = list_entry(head->next, queue_contex_t, chain)->size;
+    for (node = (head)->next->next; node != (head); node = node->next) {
+        queue_contex_t *entry = list_entry(node, queue_contex_t, chain);
+        ret += entry->size;
+        entry->size = 0;
+        list_splice(entry->q, tmp_head);
+        entry->q->next = NULL;
+        entry->q->prev = NULL;
     }
 
-    return q_size(list_entry(head->next, queue_contex_t, chain)->q);
+    q_sort(tmp_head, descend);
+    list_entry(head->next, queue_contex_t, chain)->q = tmp_head;
+    list_entry(head->next, queue_contex_t, chain)->size = ret;
+    return ret;
 }
