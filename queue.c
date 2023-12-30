@@ -308,7 +308,7 @@ void q_sort(struct list_head *head, bool descend)
         list = list->next;
         pending->next = NULL;
         count++;
-    } while (!list);
+    } while (list);
     list = pending;
     pending = pending->prev;
     while (1) {
