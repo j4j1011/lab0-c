@@ -268,17 +268,22 @@ void q_reverseK(struct list_head *head, int k)
     if (!head || list_empty(head) || list_is_singular(head) || k <= 1)
         return;
 
-    struct list_head *node, *safe, *tmp_h = head;
+    struct list_head *swap, *safe, *tail, *tmp_h = head;
     int length = q_size(head) / k;
+
     for (int i = 0; i < length; i++) {
-        node = tmp_h->next;
-        safe = node->next;
-        for (int j = 0; j < k - 1; j++) {
-            list_move(node, tmp_h);
-            node = safe;
-            safe = node->next;
+        tail = tmp_h->next;
+        swap = tail;
+        for (int j = 0; j < k - 1; j++)
+            swap = swap->next;
+        safe = swap->prev;
+        for (; tmp_h != swap && tmp_h != safe;) {
+            list_move(swap, tmp_h);
+            tmp_h = tmp_h->next;
+            swap = safe;
+            safe = safe->prev;
         }
-        tmp_h = node->prev;
+        tmp_h = tail;
     }
     return;
 }
