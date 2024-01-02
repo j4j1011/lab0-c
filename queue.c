@@ -114,45 +114,9 @@ void q_free(struct list_head *l)
     test_free(l);
     return;
 }
-static inline element_t *q_new_elem(char *s)
-{
-    element_t *elem = malloc(sizeof(element_t));
-    char *tmp = strdup(s);
 
-    if (!elem || !tmp) {
-        free(elem);
-        free(tmp);
-        return NULL;
-    }
-
-    elem->value = tmp;
-    return elem;
-}
-
-bool q_insert_head(struct list_head *head, char *s)
-{
-    if (!head)
-        return false;
-
-    element_t *elem = q_new_elem(s);
-    if (!elem)
-        return false;
-
-    list_add(&elem->list, head);
-
-    return true;
-}
-
-/* Insert an element at tail of queue */
-bool q_insert_tail(struct list_head *head, char *s)
-{
-    if (!head)
-        return false;
-
-    return q_insert_head(head->prev, s);
-}
 /* Insert an element at head of queue */
-/*bool q_insert_head(struct list_head *head, char *s)
+bool q_insert_head(struct list_head *head, char *s)
 {
     if (!head || !s)
         return false;
@@ -169,12 +133,12 @@ bool q_insert_tail(struct list_head *head, char *s)
     memcpy(node->value, s, strlen(s) + 1);
     list_add(&node->list, head);
     return true;
-}*/
+}
 
 
 
 /* Insert an element at tail of queue */
-/*bool q_insert_tail(struct list_head *head, char *s)
+bool q_insert_tail(struct list_head *head, char *s)
 {
     if (!head || !s)
         return false;
@@ -192,7 +156,7 @@ bool q_insert_tail(struct list_head *head, char *s)
     list_add_tail(&node->list, head);
     return true;
 }
-*/
+
 /* Remove an element from head of queue */
 element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
 {
@@ -224,7 +188,7 @@ element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
 /* Return number of elements in queue */
 int q_size(struct list_head *head)
 {
-    if (!head)
+    if (!head || list_empty(head))
         return 0;
 
     struct list_head *node;
@@ -251,7 +215,6 @@ bool q_delete_mid(struct list_head *head)
 }
 
 /* Delete all nodes that have duplicate string */
-
 bool q_delete_dup(struct list_head *head)
 {
     if (!head)
@@ -308,7 +271,6 @@ void q_reverseK(struct list_head *head, int k)
 
     struct list_head *swap, *safe, *tail, *tmp_h = head;
     int length = q_size(head) / k;
-
     for (int i = 0; i < length; i++) {
         tail = tmp_h->next;
         swap = tail;
@@ -323,6 +285,40 @@ void q_reverseK(struct list_head *head, int k)
         }
         tmp_h = tail;
     }
+    return;
+}
+
+void q_sort_breath(struct list_head *head, bool descend)
+{
+    if (!head || list_empty(head) || list_is_singular(head))
+        return;
+    head->next->prev = NULL;
+    struct list_head *front = head->prev, *tail = head, *a, *b;
+    list_for_each_safe (a, b, head)
+        a->next = NULL;
+    while (front->prev) {
+        while (front && front->prev) {
+            a = tail->prev;
+            b = a->prev;
+            front = b->prev;
+            a = merge(a, b, descend);
+            tail->prev = a;
+            a->prev = front;
+            tail = a;
+        }
+        front = head->prev;
+        tail = head;
+    }
+    head->next = front;
+    front->prev = head;
+    a = front->next;
+    while (a) {
+        a->prev = front;
+        front = a;
+        a = a->next;
+    }
+    head->prev = front;
+    front->next = head;
     return;
 }
 
