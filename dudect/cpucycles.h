@@ -8,7 +8,7 @@ static inline int64_t cpucycles(void)
 {
 #if defined(__i386__) || defined(__x86_64__)
     unsigned int hi, lo;
-    __asm__ volatile("rdtsc\n\t" : "=a"(lo), "=d"(hi));
+    __asm__ volatile("rdtscp\n\t" : "=a"(lo), "=d"(hi));
     return ((int64_t) lo) | (((int64_t) hi) << 32);
 
 #elif defined(__aarch64__)
