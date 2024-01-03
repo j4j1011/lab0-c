@@ -90,7 +90,7 @@ static void prepare_percentiles(int64_t *exec_times)
     qsort(exec_times, N_MEASURES, sizeof(int64_t),
           (int (*)(const void *, const void *)) cmp);
     percentile_p90 = percentile(
-        exec_times, 1 - (pow(0.5, 10 * (double) (10) / NUMBER_PERCENTILES)),
+        exec_times, 1 - (pow(0.5, 10 * (double) (30) / NUMBER_PERCENTILES)),
         N_MEASURES);
 }
 
