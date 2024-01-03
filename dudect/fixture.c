@@ -157,13 +157,10 @@ static bool doit(int mode)
     prepare_inputs(input_data, classes);
     bool ret = measure(before_ticks, after_ticks, input_data, mode);
     differentiate(exec_times, before_ticks, after_ticks);
-    if (percentiles[N_PERCENTILES - 1]) {
-        prepare_percentiles(exec_times, percentiles);
-        ret = 0;
-    } else {
-        update_statistics(exec_times, classes, percentiles);
-        ret &= report();
-    }
+    prepare_percentiles(exec_times, percentiles);
+    update_statistics(exec_times, classes, percentiles);
+    ret &= report();
+
     free(before_ticks);
     free(after_ticks);
     free(exec_times);
