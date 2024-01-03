@@ -1,5 +1,7 @@
 #include <assert.h>
+#include <math.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "constant.h"
@@ -67,6 +69,30 @@ void prepare_inputs(uint8_t *input_data, uint8_t *classes)
     }
 }
 
+static int cmp(const int64_t *a, const int64_t *b)
+{
+    return (int) (*a - *b);
+}
+
+static int64_t percentile(int64_t *a, double which, size_t size)
+{
+    size_t array_position = (size_t) ((double) size * (double) which);
+    assert(array_position >= 0);
+    assert(array_position < size);
+    return a[array_position];
+}
+
+void prepare_percentiles(int64_t *exec_times, int64_t *percentiles)
+{
+    qsort(exec_times, N_MEASURES, sizeof(int64_t),
+          (int (*)(const void *, const void *)) cmp);
+    for (size_t i = 0; i < N_PERCENTILES; i++) {
+        percentiles[i] = percentile(
+            exec_times, 1 - (pow(0.5, 10 * (double) (i + 1) / N_PERCENTILES)),
+            N_MEASURES);
+    }
+}
+
 bool measure(int64_t *before_ticks,
              int64_t *after_ticks,
              uint8_t *input_data,
@@ -77,7 +103,7 @@ bool measure(int64_t *before_ticks,
 
     switch (mode) {
     case DUT(insert_head):
-        for (size_t i = 0; i < N_MEASURES - 0; i++) {
+        for (size_t i = DROP_SIZE; i < N_MEASURES - DROP_SIZE; i++) {
             char *s = get_random_string();
             dut_new();
             dut_insert_head(
@@ -94,7 +120,7 @@ bool measure(int64_t *before_ticks,
         }
         break;
     case DUT(insert_tail):
-        for (size_t i = 0; i < N_MEASURES - 0; i++) {
+        for (size_t i = DROP_SIZE; i < N_MEASURES - DROP_SIZE; i++) {
             char *s = get_random_string();
             dut_new();
             dut_insert_head(
@@ -111,7 +137,7 @@ bool measure(int64_t *before_ticks,
         }
         break;
     case DUT(remove_head):
-        for (size_t i = 0; i < N_MEASURES - 0; i++) {
+        for (size_t i = DROP_SIZE; i < N_MEASURES - DROP_SIZE; i++) {
             dut_new();
             dut_insert_head(
                 get_random_string(),
@@ -129,7 +155,7 @@ bool measure(int64_t *before_ticks,
         }
         break;
     case DUT(remove_tail):
-        for (size_t i = 0; i < N_MEASURES - 0; i++) {
+        for (size_t i = DROP_SIZE; i < N_MEASURES - DROP_SIZE; i++) {
             dut_new();
             dut_insert_head(
                 get_random_string(),
@@ -147,7 +173,7 @@ bool measure(int64_t *before_ticks,
         }
         break;
     default:
-        for (size_t i = 0; i < N_MEASURES - 0; i++) {
+        for (size_t i = DROP_SIZE; i < N_MEASURES - DROP_SIZE; i++) {
             dut_new();
             dut_insert_head(
                 get_random_string(),
