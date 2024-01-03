@@ -118,7 +118,6 @@ static bool report(void)
                ENOUGH_MEASURE - number_traces_max_t);
         return false;
     }
-    t_context_t *t = max_test();
     double max_t = fabs(t_compute(t));
     double max_tau = max_t / sqrt(number_traces_max_t);
     /* max_t: the t statistic value
