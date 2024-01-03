@@ -103,7 +103,7 @@ static t_context_t *max_test(void)
 static bool report(void)
 {
     t_context_t *t = max_test();
-    double max_t = fabs(t_compute(t_ctxs[0]));
+    double max_t = fabs(t_compute(t));
     double number_traces_max_t = t->n[0] + t->n[1];
     double max_tau = max_t / sqrt(number_traces_max_t);
 
