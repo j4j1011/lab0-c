@@ -40,10 +40,12 @@
 #include "fixture.h"
 #include "ttest.h"
 
-#define ENOUGH_MEASURE 10000
+#define ENOUGH_MEASURE 11500
 #define TEST_TRIES 10
+#define NUMBER_PERCENTILES 100
 
 static t_context_t *t;
+static int64_t percentile_p90;
 
 /* threshold values for Welch's t-test */
 enum {
@@ -64,25 +66,50 @@ static void differentiate(int64_t *exec_times,
         exec_times[i] = after_ticks[i] - before_ticks[i];
 }
 
+static int cmp(const int64_t *a, const int64_t *b)
+{
+    return (int) (*a - *b);
+}
+
+static int64_t percentile(int64_t *a_sorted, double which, size_t size)
+{
+    size_t array_position = (size_t) ((double) size * (double) which);
+    assert(array_position >= 0);
+    assert(array_position < size);
+    return a_sorted[array_position];
+}
+
+/*
+ set different thresholds for cropping measurements.
+ the exponential tendency is meant to approximately match
+ the measurements distribution, but there's not more science
+ than that.
+*/
+static void prepare_percentiles(int64_t *exec_times)
+{
+    qsort(exec_times, N_MEASURES, sizeof(int64_t),
+          (int (*)(const void *, const void *)) cmp);
+    percentile_p90 = percentile(
+        exec_times, 1 - (pow(0.5, 10 * (double) (10) / NUMBER_PERCENTILES)),
+        N_MEASURES);
+}
+
 static void update_statistics(const int64_t *exec_times, uint8_t *classes)
 {
-    for (size_t i = 0; i < N_MEASURES; i++) {
+    for (size_t i = DROP_SIZE; i < N_MEASURES - 1; i++) {
         int64_t difference = exec_times[i];
         /* CPU cycle counter overflowed or dropped measurement */
         if (difference <= 0)
             continue;
 
         /* do a t-test on the execution time */
-        t_push(t, difference, classes[i]);
+        if (differece < percentile_p90)
+            t_push(t, difference, classes[i]);
     }
 }
 
 static bool report(void)
 {
-    double max_t = fabs(t_compute(t));
-    double number_traces_max_t = t->n[0] + t->n[1];
-    double max_tau = max_t / sqrt(number_traces_max_t);
-
     printf("\033[A\033[2K");
     printf("meas: %7.2lf M, ", (number_traces_max_t / 1e6));
     if (number_traces_max_t < ENOUGH_MEASURE) {
@@ -91,6 +118,9 @@ static bool report(void)
         return false;
     }
 
+    double max_t = fabs(t_compute(t));
+    double number_traces_max_t = t->n[0] + t->n[1];
+    double max_tau = max_t / sqrt(number_traces_max_t);
     /* max_t: the t statistic value
      * max_tau: a t value normalized by sqrt(number of measurements).
      *          this way we can compare max_tau taken with different
@@ -130,12 +160,14 @@ static bool doit(int mode)
     }
 
     prepare_inputs(input_data, classes);
-
     bool ret = measure(before_ticks, after_ticks, input_data, mode);
     differentiate(exec_times, before_ticks, after_ticks);
-    update_statistics(exec_times, classes);
-    ret &= report();
-
+    if (!percentile_p90) {
+        prepare_percentiles(exec_times);
+    } else {
+        update_statistics(exec_times, classes);
+        ret &= report();
+    }
     free(before_ticks);
     free(after_ticks);
     free(exec_times);
@@ -170,8 +202,11 @@ static bool test_const(char *text, int mode)
     return result;
 }
 
-#define DUT_FUNC_IMPL(op) \
-    bool is_##op##_const(void) { return test_const(#op, DUT(op)); }
+#define DUT_FUNC_IMPL(op)                \
+    bool is_##op##_const(void)           \
+    {                                    \
+        return test_const(#op, DUT(op)); \
+    }
 
 #define _(x) DUT_FUNC_IMPL(x)
 DUT_FUNCS
