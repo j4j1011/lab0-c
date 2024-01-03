@@ -103,13 +103,14 @@ static void update_statistics(const int64_t *exec_times, uint8_t *classes)
             continue;
 
         /* do a t-test on the execution time */
-        if (differece < percentile_p90)
+        if (difference < percentile_p90)
             t_push(t, difference, classes[i]);
     }
 }
 
 static bool report(void)
 {
+    double number_traces_max_t = t->n[0] + t->n[1];
     printf("\033[A\033[2K");
     printf("meas: %7.2lf M, ", (number_traces_max_t / 1e6));
     if (number_traces_max_t < ENOUGH_MEASURE) {
@@ -117,9 +118,8 @@ static bool report(void)
                ENOUGH_MEASURE - number_traces_max_t);
         return false;
     }
-
+    t_context_t *t = max_test();
     double max_t = fabs(t_compute(t));
-    double number_traces_max_t = t->n[0] + t->n[1];
     double max_tau = max_t / sqrt(number_traces_max_t);
     /* max_t: the t statistic value
      * max_tau: a t value normalized by sqrt(number of measurements).
