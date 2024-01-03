@@ -6,7 +6,7 @@
 
 /* Number of measurements per test */
 #define N_MEASURES 150
-
+#define DUDECT_NUMBER_PERCENTILES (100)
 /* Allow random number range from 0 to 65535 */
 #define CHUNK_SIZE 2
 
@@ -31,6 +31,7 @@ void prepare_inputs(uint8_t *input_data, uint8_t *classes);
 bool measure(int64_t *before_ticks,
              int64_t *after_ticks,
              uint8_t *input_data,
+
              int mode);
 
 #endif
