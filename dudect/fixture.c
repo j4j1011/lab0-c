@@ -159,7 +159,9 @@ static bool doit(int mode)
     differentiate(exec_times, before_ticks, after_ticks);
     if (percentiles[N_MEASURES - 1])
         prepare_percentiles(exec_times, percentiles);
-    else {
+    ret = 0;
+    else
+    {
         update_statistics(exec_times, classes, percentiles);
         ret &= report();
     }
