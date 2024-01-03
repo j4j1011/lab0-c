@@ -100,20 +100,15 @@ static void update_statistics(const int64_t *exec_times,
         /* do a t-test on the execution time */
         t_push(t, difference, classes[i]);
         /*do cropping ...*/
-        for (size_t crop_index = 0; crop_index < DUDECT_NUMBER_PERCENTILES;
-             crop_index++) {
-            if (difference < percentiles[crop_index]) {
-                t_push(t, difference, classes[i]);
-            }
+        if (difference < percentiles[10]) {
+            t_push(t, difference, classes[i]);
         }
     }
 }
 
 static bool report(void)
 {
-    double max_t = fabs(t_compute(t));
     double number_traces_max_t = t->n[0] + t->n[1];
-    double max_tau = max_t / sqrt(number_traces_max_t);
 
     printf("\033[A\033[2K");
     printf("meas: %7.2lf M, ", (number_traces_max_t / 1e6));
@@ -123,6 +118,8 @@ static bool report(void)
         return false;
     }
 
+    double max_t = fabs(t_compute(t));
+    double max_tau = max_t / sqrt(number_traces_max_t);
     /* max_t: the t statistic value
      * max_tau: a t value normalized by sqrt(number of measurements).
      *          this way we can compare max_tau taken with different
