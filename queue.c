@@ -290,6 +290,7 @@ void q_reverseK(struct list_head *head, int k)
 
 void q_sort(struct list_head *head, bool descend)
 {
+    printf("Breadth first merge sort:\n");
     if (!head || list_empty(head) || list_is_singular(head))
         return;
     head->next->prev = NULL;
