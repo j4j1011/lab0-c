@@ -288,7 +288,7 @@ void q_reverseK(struct list_head *head, int k)
     return;
 }
 
-void q_sort_breath(struct list_head *head, bool descend)
+void q_sort(struct list_head *head, bool descend)
 {
     if (!head || list_empty(head) || list_is_singular(head))
         return;
@@ -323,7 +323,7 @@ void q_sort_breath(struct list_head *head, bool descend)
 }
 
 /* Sort elements of queue in ascending/descending order */
-void q_sort(struct list_head *head, bool descend)
+void q_sort_depth(struct list_head *head, bool descend)
 {
     if (!head || list_empty(head) || list_is_singular(head))
         return;
