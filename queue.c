@@ -326,6 +326,7 @@ void q_sort(struct list_head *head, bool descend)
 /* Sort elements of queue in ascending/descending order */
 void q_sort_depth(struct list_head *head, bool descend)
 {
+    printf("depth first merge sort:\n");
     if (!head || list_empty(head) || list_is_singular(head))
         return;
 
