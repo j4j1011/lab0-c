@@ -655,6 +655,45 @@ static bool do_dm(int argc, char *argv[])
     return ok && !error_check();
 }
 
+static bool do_shuffle(int argc, char *argv[])
+{
+    if (argc != 1) {
+        report(1, "%s takes no arguments", argv[0]);
+        return false;
+    }
+
+    if (!current || !current->q) {
+        report(3, "Warning: Try to access null queue");
+        return false;
+    }
+    error_check();
+
+    if (exception_setup(true)) {
+        srand(time(NULL));
+
+        int size = q_size(current->q);
+        for (int i = size - 1; i > 0; i--) {
+            int j = rand() % (i + 1);
+            struct list_head *first = current->q->next;
+            struct list_head *last = current->q->prev;
+            if (j > i >> 1) {
+                for (int k = size - j - 1; k > 0; k--)
+                    last = last->prev;
+                list_move_tail(last, head);
+            } else {
+                for (; j > 0; j--)
+                    first = first->next;
+                list_move_tail(first, head);
+            }
+            last = last->prev;
+        }
+    }
+    exception_cancel();
+
+    q_show(3);
+    return !error_check();
+}
+
 static bool do_swap(int argc, char *argv[])
 {
     if (argc != 1) {
@@ -1015,6 +1054,7 @@ static bool do_next(int argc, char *argv[])
 static void console_init()
 {
     ADD_COMMAND(new, "Create new queue", "");
+    ADD_COMMAND(shuffle, "Shuffle current queue", "");
     ADD_COMMAND(free, "Delete queue", "");
     ADD_COMMAND(prev, "Switch to previous queue", "");
     ADD_COMMAND(next, "Switch to next queue", "");
