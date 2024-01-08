@@ -679,11 +679,11 @@ static bool do_shuffle(int argc, char *argv[])
             if (j > i >> 1) {
                 for (int k = size - j - 1; k > 0; k--)
                     last = last->prev;
-                list_move_tail(last, head);
+                list_move_tail(last, current->q);
             } else {
                 for (; j > 0; j--)
                     first = first->next;
-                list_move_tail(first, head);
+                list_move_tail(first, current->q);
             }
             last = last->prev;
         }
